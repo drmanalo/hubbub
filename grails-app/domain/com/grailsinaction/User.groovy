@@ -7,7 +7,7 @@ class User {
     Date dateCreated
 
     static constraints = {
-        loginId size: 3..20, unique: true, nullable: false
+        loginId size: 4..20, unique: true, nullable: false
         password size: 6..20, nullable: false, validator: { 
         	passwd, user -> passwd != user.loginId
         }

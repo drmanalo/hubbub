@@ -11,10 +11,13 @@ import spock.lang.Specification
 @Mock([User, Post])
 class PostControllerSpec extends Specification {
 
+    String loginId = "chuck_norris"
+    String password = "password"
+
     def "Get a users timeline given their id"() {
 
         given: "A user with posts in the db"
-        User chuck = new User(loginId: "chuck_norris", password: "password")
+        User chuck = new User(loginId: loginId, password: password)
         chuck.addToPosts(new Post(content: "A first post"))
         chuck.addToPosts(new Post(content: "A second post"))
         chuck.save(failOnError: true)
@@ -44,22 +47,17 @@ class PostControllerSpec extends Specification {
 
     def "Adding a valid new post to the timeline"() {
 
-        given: "A user with posts in the db"
-        User chuck = new User(loginId: "chuck_norris", password: "password").save(failOnError: true)
+        given: "a mock post service"
+        def mockPostService = Mock(PostService)
+        1 * mockPostService.createPost(_,_) >> new Post(content: "Mock Post")
+        controller.postService = mockPostService
 
-        and: "A loginId parameter"
-        params.id = chuck.loginId
+        when: "controller is invoked"
+        def result = controller.addPost("joe_cool", "Posting up a storm")
 
-        and: "Some content for the post"
-        params.content = "Chuck Norris can unit test entire applications with a single assert"
-
-        when: "addPost is invoked"
-        def model = controller.addPost()
-
-        then: "our flash message and redirect confirms the success"
-        flash.message == "Successfully created post"
-        response.redirectedUrl == "/post/timeline/${chuck.loginId}"
-        Post.countByUser(chuck) == 1
+        then: "redirected to timeline, flash message tells us all is well"
+        flash.message ==~ /Added new post: Mock.*/
+        response.redirectedUrl == "/post/timeline/joe_cool"
     }
 
     @spock.lang.Unroll
@@ -69,7 +67,7 @@ class PostControllerSpec extends Specification {
         params.id = suppliedId
 
         when: "Controller is invoked"
-        controller.index()
+        controller.home()
 
         then:
         response.redirectedUrl == expectedUrl
@@ -79,4 +77,5 @@ class PostControllerSpec extends Specification {
         "joe_cool"     |   "/post/timeline/joe_cool"
         null            |   "/post/timeline/chuck_norris"
     }
+
 }
